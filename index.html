@@ -932,22 +932,17 @@
             });
             if (activeItem) activeItem.classList.add('active');
         }, 100);
-    } else {} else {
+    } else {
         renderContent(book.content);
     }
     
     // 高亮关键词
     // 高亮关键词如果 (highlightQuery) {如果 (highlightQuery) {
-                    // 高亮关键词 - 使用 requestAnimationFrame 确保 DOM 渲染完成
-                if (highlightQuery) {
-                    console.log('准备高亮:', highlightQuery);
-                    // 先等 DOM 渲染，再执行高亮
-                    requestAnimationFrame(() => {
-                        setTimeout(() => {
-                            highlightInContent(highlightQuery);
-                        }, 300);
-                    });
-                }
+    if (highlightQuery) {
+        setTimeout(() => {
+            highlightInContent(highlightQuery);
+        }, 500);  // 从 150 改为 500，确保 DOM 完全渲染
+    }
 }
 
         // 解析目录结构
@@ -1227,71 +1222,52 @@
                 // 高亮关键词并滚动到视野
                 // 高亮关键词并滚动到视野
                 // 高亮关键词并滚动到视野
-// 高亮关键词并滚动到视野
-function highlightInContent(query) {function highlightInContent(query) {
-    console.log('开始高亮关键词:', query); // 调试用
-    
+function highlightInContent(query) {
     const body = document.getElementById('markdownBody');
-    if (!body || !query) {
-        console.log('缺少 body 或 query');
-        return;
-    }
+    if (!body || !query) return;
     
-    // 转义正则特殊字符
-    const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(safeQuery, 'gi');
-    
+    const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
     let firstHighlight = null;
-    const textNodes = [];
     
-    // 第一步：收集所有文本节点（先收集再修改，避免遍历出错）
-    const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, null, false);
-    while (walker.nextNode()) {
-        const node = walker.currentNode;
-        // 跳过已经在高亮标签内的
-        if (node.parentElement && node.parentElement.classList.contains('highlight')) {
-            continue;
+    // 递归处理所有文本节点
+    function highlightTextNodes(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.textContent;
+            if (regex.test(text)) {
+                regex.lastIndex = 0; // 重置正则
+                
+                const wrapper = document.createElement('span');
+                wrapper.innerHTML = text.replace(regex, match => {
+                    return `<span class="highlight">${match}</span>`;
+                });
+                
+                // 记录第一个高亮元素
+                if (!firstHighlight) {
+                    const hl = wrapper.querySelector('.highlight');
+                    if (hl) firstHighlight = hl;
+                }
+                
+                // 替换节点
+                if (node.parentNode) {
+                    node.parentNode.replaceChild(wrapper, node);
+                }
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            // 跳过 script 和 style 标签
+            if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE') return;
+            
+            // 使用 Array.from 复制子节点列表，因为遍历时可能会修改 DOM
+            Array.from(node.childNodes).forEach(child => highlightTextNodes(child));
         }
-        // 检查是否包含关键词
-        if (regex.test(node.textContent)) {
-            textNodes.push(node);
-        }
-        regex.lastIndex = 0; // 重置正则
     }
     
-    console.log('找到包含关键词的文本节点数:', textNodes.length);
+    highlightTextNodes(body);
     
-    // 第二步：替换文本节点
-    textNodes.forEach(node => {
-        const text = node.textContent;
-        regex.lastIndex = 0;
-        
-        // 创建临时容器
-        const wrapper = document.createElement('span');
-        wrapper.innerHTML = text.replace(regex, match => {
-            return `<span class="highlight">${match}</span>`;
-        });
-        
-        // 记录第一个高亮元素用于滚动
-        if (!firstHighlight) {
-            const hl = wrapper.querySelector('.highlight');
-            if (hl) firstHighlight = hl;
-        }
-        
-        // 替换原节点
-        if (node.parentNode) {
-            node.parentNode.replaceChild(wrapper, node);
-        }
-    });
-    
-    // 第三步：滚动到第一个高亮
+    // 滚动到第一个高亮
     if (firstHighlight) {
-        console.log('滚动到高亮位置');
         setTimeout(() => {
             firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 200);
-    } else {
-        console.log('未找到可高亮的文本');
+        }, 100);
     }
 }
     </script>
