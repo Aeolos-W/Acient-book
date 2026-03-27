@@ -1220,57 +1220,55 @@
 
                 // 高亮关键词并滚动到视野
                 // 高亮关键词并滚动到视野
-                function highlightInContent(query) {
-            const body = document.getElementById('markdownBody');
-            if (!body || !query) return;
-            
-            // 遍历所有文本节点
-            const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, null, false);
-            const nodesToReplace = [];
-            let node;
-            
-            while (node = walker.nextNode()) {
-                if (node.nodeValue.toLowerCase().includes(query.toLowerCase())) {
-                    nodesToReplace.push(node);
-                }
-            }
-            
-            let firstHighlight = null;
-            
-            nodesToReplace.forEach(node => {
-                const text = node.nodeValue;
-                const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-                const parts = text.split(regex);
-                const matches = text.match(regex);
+                // 高亮关键词并滚动到视野
+function highlightInContent(query) {
+    const body = document.getElementById('markdownBody');
+    if (!body || !query) return;
+    
+    const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    let firstHighlight = null;
+    
+    // 递归处理所有文本节点
+    function highlightTextNodes(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.textContent;
+            if (regex.test(text)) {
+                regex.lastIndex = 0; // 重置正则
                 
-                if (!matches) return;
-                
-                const fragment = document.createDocumentFragment();
-                
-                parts.forEach((part, i) => {
-                    if (part) {
-                        fragment.appendChild(document.createTextNode(part));
-                    }
-                    if (matches[i]) {
-                        const highlightSpan = document.createElement('span');
-                        highlightSpan.className = 'highlight';
-                        highlightSpan.textContent = matches[i];
-                        fragment.appendChild(highlightSpan);
-                        
-                        if (!firstHighlight) {
-                            firstHighlight = highlightSpan;
-                        }
-                    }
+                const wrapper = document.createElement('span');
+                wrapper.innerHTML = text.replace(regex, match => {
+                    return `<span class="highlight">${match}</span>`;
                 });
                 
-                node.parentNode.replaceChild(fragment, node);
-            });
-            
-            // 滚动到第一个高亮
-            if (firstHighlight) {
-                firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // 记录第一个高亮元素
+                if (!firstHighlight) {
+                    const hl = wrapper.querySelector('.highlight');
+                    if (hl) firstHighlight = hl;
+                }
+                
+                // 替换节点
+                if (node.parentNode) {
+                    node.parentNode.replaceChild(wrapper, node);
+                }
             }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            // 跳过 script 和 style 标签
+            if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE') return;
+            
+            // 使用 Array.from 复制子节点列表，因为遍历时可能会修改 DOM
+            Array.from(node.childNodes).forEach(child => highlightTextNodes(child));
         }
+    }
+    
+    highlightTextNodes(body);
+    
+    // 滚动到第一个高亮
+    if (firstHighlight) {
+        setTimeout(() => {
+            firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    }
+}
     </script>
 </body>
 </html>
