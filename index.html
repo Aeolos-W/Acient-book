@@ -937,10 +937,11 @@
     }
     
     // 高亮关键词
+    // 高亮关键词如果 (highlightQuery) {如果 (highlightQuery) {
     if (highlightQuery) {
         setTimeout(() => {
             highlightInContent(highlightQuery);
-        }, 150);
+        }, 500);  // 从 150 改为 500，确保 DOM 完全渲染
     }
 }
 
