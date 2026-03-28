@@ -51,6 +51,7 @@
         }
 
         .search-container {
+.search-container {
             width: 100%;
             max-width: 600px;
             background: white;
@@ -743,15 +744,19 @@
             });
         // 页面加载时读取数据
         async function loadDatabase() {
-            try {
-                const response = await fetch(DATABASE_URL);
-                const data = await response.json();
-                booksDatabase = data;
-                console.log('古籍数据加载完成，共', data.length, '本');
-            } catch (error) {
-                console.error('加载数据失败:', error);
-            }
+    try {
+        const response = await fetch('./database.json');
+        if (!response.ok) {
+            throw new Error('找不到 database.json 文件');
         }
+        const data = await response.json();
+        booksDatabase = data;
+        console.log('数据加载完成，共', data.length, '本');
+    } catch (error) {
+        console.error('加载数据失败:', error);
+        alert('错误：找不到 database.json！\n\n请确保：\n1. 已运行 node build-db.js 生成文件\n2. database.json 与 index.html 在同一目录\n3. 已一并提交到 GitHub');
+    }
+}
 
         // 页面加载时执行
         loadDatabase();
