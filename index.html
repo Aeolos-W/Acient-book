@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>探骊玄珠</title>
+    <title>古籍文献检索系统</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
     <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
@@ -638,6 +638,115 @@
             padding: 2rem;
             font-style: italic;
         }
+
+                /* 书城页面容器 */
+                .bookstore-page {
+            display: none;  /* 默认隐藏 */
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        /* 书城网格 - 网页端固定3列，如图二布局 */
+        .bookstore-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);  /* 强制3列 */
+            gap: 3rem 2rem;
+            padding: 2rem 4rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* 书籍封面卡片整体 */
+        .book-cover-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .book-cover-card:hover {
+            transform: translateY(-8px);
+        }
+
+        /* 线装书封面 - 竖版样式 */
+        .book-cover {
+            width: 140px;
+            height: 200px;
+            border-radius: 4px;
+            position: relative;
+            box-shadow: 3px 5px 15px rgba(0,0,0,0.2);
+            /* 右侧装订线效果 */
+            border-right: 3px solid rgba(255,255,255,0.4);
+            overflow: hidden;
+        }
+
+        /* 模拟线装书的装订孔（右侧白点） */
+        .book-cover::after {
+            content: '';
+            position: absolute;
+            right: 8px;
+            top: 20px;
+            bottom: 20px;
+            width: 2px;
+            background: repeating-linear-gradient(
+                to bottom,
+                rgba(255,255,255,0.6) 0px,
+                rgba(255,255,255,0.6) 8px,
+                transparent 8px,
+                transparent 20px
+            );
+        }
+
+        /* 封面标签 - 竖排书名 */
+        .book-cover-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            writing-mode: vertical-rl;  /* 竖排从右至左 */
+            text-orientation: upright;
+            font-size: 1.2rem;
+            color: #fff;
+            font-weight: bold;
+            letter-spacing: 0.4em;
+            font-family: "Noto Serif SC", "SimSun", serif;
+            border: 2px solid rgba(255,255,255,0.5);
+            padding: 1rem 0.6rem;
+            border-radius: 4px;
+            background: rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-height: 140px;
+            overflow: hidden;
+        }
+
+        /* 图二所示的古籍配色方案 */
+        .cover-brown { background: linear-gradient(135deg, #8b4513, #a0522d); }      /* 伤寒论 - 赭石 */
+        .cover-yellow { background: linear-gradient(135deg, #d2691e, #cd853f); }      /* 内经 - 土黄 */
+        .cover-gold { background: linear-gradient(135deg, #daa520, #b8860b); }        /* 金匮 - 金黄 */
+        .cover-red { background: linear-gradient(135deg, #a52a2a, #8b4513); }         /* 赤水 - 赤红 */
+        .cover-purple { background: linear-gradient(135deg, #8b4789, #6b3a6b); }       /* 临证 - 紫红 */
+        .cover-olive { background: linear-gradient(135deg, #6b8e23, #556b2f); }       /* 本草 - 橄榄绿 */
+        .cover-cyan { background: linear-gradient(135deg, #5f9ea0, #4682b4); }         /* 其他 - 青灰 */
+
+        /* 封面下方信息 */
+        .book-cover-title {
+            margin-top: 1.2rem;
+            font-size: 1.1rem;
+            color: var(--ink-black);
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 0.1em;
+        }
+
+        .book-cover-meta {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 0.3rem;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -645,8 +754,7 @@
     <!-- 首页：极简搜索 -->
     <div id="homePage" class="home-page">
         <h1 class="brand">探骊玄珠</h1>
-        <img src="./探骊玄珠.png">
-        <div class="search-container""搜索容器">
+        <div class="search-container">
             <div class="search-tabs">
                 <button class="tab-btn active" data-mode="content">全文检索</button>
                 <button class="tab-btn" data-mode="title">书名检索</button>
@@ -654,6 +762,23 @@
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="输入关键词，多个词空格隔开（需同时包含）..." autocomplete="off">
                 <button id="searchBtn">检索</button>
+            </div>
+            <div style="margin-top: 1.5rem; text-align: center;">
+                <button onclick="showBookstore()" style="
+                    padding: 0.6rem 2rem;
+                    background: transparent;
+                    border: 1px solid var(--accent);
+                    color: var(--accent);
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-family: inherit;
+                    font-size: 0.95rem;
+                    letter-spacing: 0.2em;
+                    transition: all 0.3s;
+                " onmouseover="this.style.background='var(--accent)';this.style.color='white';" 
+                onmouseout="this.style.background='transparent';this.style.color='var(--accent)';">
+                    浏览全部藏书
+                </button>
             </div>
         </div>
     </div>
@@ -674,6 +799,18 @@
         <div id="loading" class="loading">正在检索古籍...</div>
         <div id="emptyState" class="empty-state" style="display: none;">
             未找到相关结果，请尝试其他关键词
+        </div>
+    </div>
+
+    <!-- 书城页面 -->
+    <div id="bookstorePage" class="bookstore-page">
+        <div class="header">
+            <button class="back-btn" onclick="showHome()">← 返回首页</button>
+            <h2 style="color: var(--accent); font-family: inherit; letter-spacing: 0.3em;">藏书阁</h2>
+            <div style="width: 80px;"></div>
+        </div>
+        <div id="bookstoreContainer" class="bookstore-grid">
+            <!-- 书籍封面将动态渲染在这里 -->
         </div>
     </div>
 
@@ -1070,6 +1207,7 @@
             document.getElementById('homePage').style.display = 'flex';
             document.getElementById('resultsPage').style.display = 'none';
             document.getElementById('readerPage').style.display = 'none';
+            document.getElementById('bookstorePage').style.display = 'none'; 
             document.getElementById('searchInput').value = '';
         }
 
@@ -1077,6 +1215,7 @@
             document.getElementById('homePage').style.display = 'none';
             document.getElementById('resultsPage').style.display = 'block';
             document.getElementById('readerPage').style.display = 'none';
+            document.getElementById('bookstorePage').style.display = 'none';
         }
 
         function showResults() {
@@ -1091,6 +1230,46 @@
 
         function toggleToc() {
             document.getElementById('tocSidebar').classList.toggle('open');
+        }
+
+                // 显示书城
+                function showBookstore() {
+            document.getElementById('homePage').style.display = 'none';
+            document.getElementById('resultsPage').style.display = 'none';
+            document.getElementById('readerPage').style.display = 'none';
+            document.getElementById('bookstorePage').style.display = 'block';
+            
+            renderBookstore();  // 渲染书籍封面
+        }
+
+        // 渲染书城封面网格
+        function renderBookstore() {
+            const container = document.getElementById('bookstoreContainer');
+            if (container.children.length > 0) return; // 已渲染则跳过
+            
+            // 配色循环（对应CSS中的7种颜色类）
+            const colorClasses = ['cover-brown', 'cover-yellow', 'cover-gold', 'cover-red', 'cover-purple', 'cover-olive', 'cover-cyan'];
+            
+            booksDatabase.forEach((book, index) => {
+                const card = document.createElement('div');
+                card.className = 'book-cover-card';
+                card.onclick = () => openBook(book.id);
+                
+                // 根据索引循环分配颜色
+                const colorClass = colorClasses[index % colorClasses.length];
+                // 截取书名为4字以内（美观）
+                const shortTitle = book.title.substring(0, 4);
+                
+                card.innerHTML = `
+                    <div class="book-cover ${colorClass}">
+                        <div class="book-cover-label">${shortTitle}</div>
+                    </div>
+                    <div class="book-cover-title">${book.title}</div>
+                    <div class="book-cover-meta">${book.dynasty} · ${book.author}</div>
+                `;
+                
+                container.appendChild(card);
+            });
         }
 
                 // 书内全文检索功能
